@@ -1,0 +1,28 @@
+{
+    "name": "createch/paycorp-sampath-vault",
+    "description": "Paycorp Sampath bank IPG package for Vault realtime payment",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Thiraj Priyadarshana",
+            "email": "thirajpriyadharshana@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "createch\\PaycorpSampathVault\\": "src"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.4@dev",
+        "orchestra/testbench": "^3.8@dev"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "createch\\PaycorpSampathVault\\Test\\": "tests/"
+        }
+    }
+}

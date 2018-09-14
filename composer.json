@@ -10,9 +10,7 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {
-        "createch/paycorp-sampath-vault": "dev-master"
-    },
+    "require": {},
     "autoload": {
         "psr-4": {
             "createch\\PaycorpSampathVault\\": "src"

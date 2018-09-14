@@ -9,7 +9,6 @@
             "email": "thirajpriyadharshana@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
     "require": {},
     "autoload": {
         "psr-4": {
@@ -24,5 +23,7 @@
         "psr-4": {
             "createch\\PaycorpSampathVault\\Test\\": "tests/"
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

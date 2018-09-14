@@ -12,9 +12,9 @@ class StoreCardJsonHelper implements IJsonHelper {
 
     public function fromJson($responseData) {
         $storeCardResponse = new StoreCardResponse();
-        $storeCardResponse->setToken($responseData[responseData][token]);
-        $storeCardResponse->setResponseCode($responseData[responseData][responseCode]);
-        $storeCardResponse->setResponseText($responseData[responseData][responseText]);
+        $storeCardResponse->setToken($responseData['responseData']['token']);
+        $storeCardResponse->setResponseCode($responseData['responseData']['responseCode']);
+        $storeCardResponse->setResponseText($responseData['responseData']['responseText']);
 
         return $storeCardResponse;
     }

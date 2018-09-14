@@ -11,6 +11,6 @@ class PaycorpSampathVaultTest extends TestCase
      */
     public function testIPGInit()
     {
-        $this->assertSame(PaycorpSampathVault::IPGLoaded(), "Hi");
+        $this->assertSame(PaycorpSampathVault::IPGLoaded(), "1.0.0.1");
     }
 }

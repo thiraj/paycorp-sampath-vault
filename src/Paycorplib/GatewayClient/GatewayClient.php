@@ -7,8 +7,8 @@ use createch\PaycorpSampathVault\Paycorplib\GatewayClientFacade\Vault;
 
 class GatewayClient {
     
-    private $payment;
-    private $vault;
+    public $payment;
+    public $vault;
     
     public function __construct(ClientConfig $config) {
         $this->payment = new Payment($config);

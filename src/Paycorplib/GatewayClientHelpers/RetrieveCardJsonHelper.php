@@ -12,8 +12,8 @@ class RetrieveCardJsonHelper implements IJsonHelper {
 
     public function fromJson($responseData) {
         $retrieveCardResponse = new RetrieveCardResponse();
-        $retrieveCardResponse->setResponseCode($responseData[responseData][responseCode]);
-        $retrieveCardResponse->setResponseText($responseData[responseData][responseText]);
+        $retrieveCardResponse->setResponseCode($responseData['responseData']['responseCode']);
+        $retrieveCardResponse->setResponseText($responseData['responseData']['responseText']);
 
         return $retrieveCardResponse;
     }

@@ -12,6 +12,9 @@ class PaycorpSampathVaultServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->publishes([
+            __DIR__ . '/config' => config_path('paycorp-sampath-vault'),
+        ]);
     }
     /**
      * Register the application services.
@@ -20,6 +23,10 @@ class PaycorpSampathVaultServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(
+            __DIR__ . '/config/PaycorpSampathVault.php', 'paycorp-sampath-vault'
+        );
+
         $this->app->singleton(PaycorpSampathVault::class, function () {
             return new PaycorpSampathVault();
         });

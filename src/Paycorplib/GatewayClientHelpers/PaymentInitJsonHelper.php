@@ -20,34 +20,34 @@ class PaymentInitJsonHelper implements IJsonHelper {
     }
 
     public function toJson($paycorpRequest) {
-        //$version = $paycorpRequest->getVersion();
-       // $msgId = $paycorpRequest->getMsgId();
+        $version = $paycorpRequest->getVersion();
+        $msgId = $paycorpRequest->getMsgId();
         $operation = $paycorpRequest->getOperation();
         $requestDate = $paycorpRequest->getRequestDate();
         $validateOnly = $paycorpRequest->getValidateOnly();
         $requestData = $paycorpRequest->getRequestData();
         
         $clientId = $requestData->getClientId();
-        //$clientIdHash = $requestData->getClientIdHash();
+        $clientIdHash = $requestData->getClientIdHash();
         $transactionType = $requestData->getTransactionType();
-       // $clientRef = $requestData->getClientRef();
-       // $comment = $requestData->getComment();
+        $clientRef = $requestData->getClientRef();
+        $comment = $requestData->getComment();
         $tokenize = $requestData->getTokenize();
-       //$tokenReference = $requestData->getTokenReference();
-        //$cssLocation1 = $requestData->getCssLocation1();
-       // $cssLocation2 = $requestData->getCssLocation2();
-       // $useReliability = $requestData->isUseReliability();
+        $tokenReference = $requestData->getTokenReference();
+        $cssLocation1 = $requestData->getCssLocation1();
+        $cssLocation2 = $requestData->getCssLocation2();
+        $useReliability = $requestData->isUseReliability();
         $extraData = $requestData->getExtraData();
         
         $transactionAmount = $requestData->getTransactionAmount();
-       // $totalAmount = $transactionAmount->getTotalAmount();
+        $totalAmount = $transactionAmount->getTotalAmount();
         $paymentAmount = $transactionAmount->getPaymentAmount();
-      //  $serviceFeeAmount = $transactionAmount->getServiceFeeAmount();
+        $serviceFeeAmount = $transactionAmount->getServiceFeeAmount();
         $currency = $transactionAmount->getCurrency();
         
         $redirect = $requestData->getRedirect();
         $returnUrl = $redirect->getReturnUrl();
-       // $cancelUrl = $redirect->getCancelUrl();
+        $cancelUrl = $redirect->getCancelUrl();
         $returnMethod = $redirect->getReturnMethod();
 
         return array(

@@ -124,7 +124,7 @@ class PaycorpSampathVault
             $this->response['AuthCode'] = $realTimeResponse->getAuthCode();
             $this->response['status'] = true;
 
-            return $realTimeResponse;
+            return $this->response;
 
         }catch(\Exception $e){
 

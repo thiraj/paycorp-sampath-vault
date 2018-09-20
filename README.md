@@ -1,7 +1,7 @@
-# Paycorp-Sampath-Vault
+# Paycorp-Sampath-Vault (Laravel)
 
 
-Paycorp-Sampath-Vault is a php package for making payment using Sampath bank Payment Gateway. This uses the PHP library of Sampath bank. In this package you can make:
+Paycorp-Sampath-Vault is a php package for making payment using Sampath bank Payment Gateway in Laravel and PHP Projects. This uses the PHP library of Sampath bank. In this package you can make:
 
   - Redirect Page Payment
   - Realtime Payment

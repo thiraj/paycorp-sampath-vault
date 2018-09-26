@@ -12,11 +12,11 @@ class PaymentRealTimeJsonHelper implements IJsonHelper {
 
     public function fromJson($responseData) {
         $paymentRealTimeResponse = new PaymentRealTimeResponse();
-        $paymentRealTimeResponse->setTxnReference($responseData['responseData']['txnReference']);
-        $paymentRealTimeResponse->setResponseCode($responseData['responseData']['responseCode']);
-        $paymentRealTimeResponse->setResponseText($responseData['responseData']['responseText']);
-        $paymentRealTimeResponse->setSettlementDate($responseData['responseData']['settlementDate']);
-        $paymentRealTimeResponse->setAuthCode($responseData['responseData']['authCode']);
+        $paymentRealTimeResponse->setTxnReference(isset($responseData['responseData']['txnReference'])?$responseData['responseData']['txnReference']:"");
+        $paymentRealTimeResponse->setResponseCode(isset($responseData['responseData']['responseCode'])?$responseData['responseData']['responseCode']:"");
+        $paymentRealTimeResponse->setResponseText(isset($responseData['responseData']['responseText'])?$responseData['responseData']['responseText']:"");
+        $paymentRealTimeResponse->setSettlementDate(isset($responseData['responseData']['settlementDate'])?$responseData['responseData']['settlementDate']:"");
+        $paymentRealTimeResponse->setAuthCode(isset($responseData['responseData']['authCode'])?$responseData['responseData']['authCode']:"");
 
         return $paymentRealTimeResponse;
     }

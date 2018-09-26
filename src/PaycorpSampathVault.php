@@ -107,8 +107,8 @@ class PaycorpSampathVault
             $realTimeRequest->setTransactionType(TransactionType::$PURCHASE);
             $realTimeRequest->setCreditCard($creditCard);
 
-            $extraData = array("invoice-no" => "I99999", "job-no" => "J10101");
-            $realTimeRequest->setExtraData($extraData);
+//            $extraData = array("invoice-no" => "I99999", "job-no" => "J10101");
+//            $realTimeRequest->setExtraData($extraData);
 
             $transactionAmount = new TransactionAmount($data['amount']);
             $transactionAmount->setCurrency($this->currency);
@@ -117,11 +117,11 @@ class PaycorpSampathVault
             $realTimeRequest->setComment($data['comment'] ? $data['comment']: '');
             $realTimeResponse = $this->client->getPayment()->realTime($realTimeRequest);
 
-            $this->response['TxnReference'] = $realTimeResponse->getTxnReference();
-            $this->response['ResponseCode'] = $realTimeResponse->getResponseCode();
-            $this->response['ResponseText'] = $realTimeResponse->getResponseText();
-            $this->response['SettlementDate'] = $realTimeResponse->getSettlementDate();
-            $this->response['AuthCode'] = $realTimeResponse->getAuthCode();
+            $this->response['TxnReference'] = $realTimeResponse->getTxnReference()?:"";
+            $this->response['ResponseCode'] = $realTimeResponse->getResponseCode()?:"";
+            $this->response['ResponseText'] = $realTimeResponse->getResponseText()?:"";
+            $this->response['SettlementDate'] = $realTimeResponse->getSettlementDate()?:"";
+            $this->response['AuthCode'] = $realTimeResponse->getAuthCode()?:"";
             $this->response['status'] = true;
 
             return $this->response;

@@ -24,7 +24,7 @@ jobs:
         #   6 -> L8, 7 -> L9, 8 -> L10, 9 -> L11, 10 -> L12, 11 -> L13
         include:
           # Lower bound of the declared support range.
-          - { php: '7.4', laravel: '8.*', eol-framework: true,  testbench: '6.*',  dependency-version: prefer-lowest }
+          - { php: '7.4', laravel: '8.*', eol-framework: true,  testbench: '6.*',  phpunit: '~9.5.10', dependency-version: prefer-lowest }
           - { php: '7.4', laravel: '8.*', eol-framework: true,  testbench: '6.*',  dependency-version: prefer-stable }
           - { php: '8.0', laravel: '9.*', eol-framework: true,  testbench: '7.*',  dependency-version: prefer-stable }
           - { php: '8.1', laravel: '10.*', eol-framework: true, testbench: '8.*',  dependency-version: prefer-lowest }
@@ -59,10 +59,15 @@ jobs:
         run: composer config --no-plugins policy.advisories.block false
 
       - name: Resolve dependencies for this Laravel version
+        # PHPUnit is pinned per row because testbench 6.x (Laravel 8) calls
+        # TestCase::getAnnotations(), which PHPUnit 9.6 removed. The two dev
+        # tools are mutually incompatible at those versions; that is unrelated
+        # to the package under test, so the row pins a combination that works.
         run: |
           composer require --no-update --no-interaction \
             "laravel/framework:${{ matrix.laravel }}" \
-            "orchestra/testbench:${{ matrix.testbench }}"
+            "orchestra/testbench:${{ matrix.testbench }}" \
+            ${{ matrix.phpunit && format('"phpunit/phpunit:{0}"', matrix.phpunit) || '' }}
           composer update --${{ matrix.dependency-version }} --no-interaction --no-progress
 
       - name: Report the resolved versions

@@ -24,13 +24,13 @@ jobs:
         #   6 -> L8, 7 -> L9, 8 -> L10, 9 -> L11, 10 -> L12, 11 -> L13
         include:
           # Lower bound of the declared support range.
-          - { php: '7.4', laravel: '8.*',  testbench: '6.*',  dependency-version: prefer-lowest }
-          - { php: '7.4', laravel: '8.*',  testbench: '6.*',  dependency-version: prefer-stable }
-          - { php: '8.0', laravel: '9.*',  testbench: '7.*',  dependency-version: prefer-stable }
-          - { php: '8.1', laravel: '10.*', testbench: '8.*',  dependency-version: prefer-lowest }
-          - { php: '8.1', laravel: '10.*', testbench: '8.*',  dependency-version: prefer-stable }
-          - { php: '8.2', laravel: '11.*', testbench: '9.*',  dependency-version: prefer-stable }
-          - { php: '8.3', laravel: '11.*', testbench: '9.*',  dependency-version: prefer-stable }
+          - { php: '7.4', laravel: '8.*', eol-framework: true,  testbench: '6.*',  dependency-version: prefer-lowest }
+          - { php: '7.4', laravel: '8.*', eol-framework: true,  testbench: '6.*',  dependency-version: prefer-stable }
+          - { php: '8.0', laravel: '9.*', eol-framework: true,  testbench: '7.*',  dependency-version: prefer-stable }
+          - { php: '8.1', laravel: '10.*', eol-framework: true, testbench: '8.*',  dependency-version: prefer-lowest }
+          - { php: '8.1', laravel: '10.*', eol-framework: true, testbench: '8.*',  dependency-version: prefer-stable }
+          - { php: '8.2', laravel: '11.*', eol-framework: true, testbench: '9.*',  dependency-version: prefer-stable }
+          - { php: '8.3', laravel: '11.*', eol-framework: true, testbench: '9.*',  dependency-version: prefer-stable }
           - { php: '8.2', laravel: '12.*', testbench: '10.*', dependency-version: prefer-stable }
           - { php: '8.3', laravel: '12.*', testbench: '10.*', dependency-version: prefer-stable }
           - { php: '8.3', laravel: '13.*', testbench: '11.*', dependency-version: prefer-stable }
@@ -47,6 +47,16 @@ jobs:
           extensions: curl, json, mbstring
           coverage: pcov
           tools: composer:v2
+
+      - name: Permit end-of-life framework versions to install
+        # Laravel 8, 9, 10 and 11 are end of life and EVERY release in those
+        # lines carries unpatched security advisories, so Composer refuses to
+        # install them by default. This matrix exists to prove that the package
+        # API still works against those framework versions -- it is not an
+        # endorsement of running an EOL framework in production, and the
+        # `coverage` job keeps the advisory policy switched on.
+        if: matrix.eol-framework
+        run: composer config --no-plugins policy.advisories.block false
 
       - name: Resolve dependencies for this Laravel version
         run: |

@@ -46,6 +46,14 @@ incompatible implementation. That has not happened in 5.5 → 13.
    a feature.
 4. Update the compatibility table in `README.md`.
 
+### End-of-life framework versions in CI
+
+Laravel 8 through 11 are end of life with unpatched advisories, so Composer will
+not install them unless `policy.advisories.block` is set to false. The matrix
+rows for those versions carry `eol-framework: true` and relax the policy for
+themselves only; the `coverage` job keeps it enabled. Never relax it for a
+release build.
+
 ### Testbench to Laravel mapping
 
 | Laravel | Testbench | PHP floor |

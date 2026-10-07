@@ -25,6 +25,26 @@ against Laravel 8 through 13, with both `--prefer-lowest` and `--prefer-stable`.
 Laravel 5.5 – 7 remain within the declared Composer constraint and are syntax- and
 static-analysis-checked, but are not exercised by the integration suite.
 
+### A caveat about Laravel 11 and earlier
+
+Laravel 5.5 through 11 are **end of life**, and every release in those lines
+carries unpatched security advisories. Modern Composer refuses to install an
+advisory-affected package, so on those framework versions `composer install`
+fails before this package is even considered:
+
+```
+Root composer.json requires laravel/framework 11.*, found laravel/framework[...]
+but these were not loaded, because they are affected by security advisories
+```
+
+That is a property of the framework, not of this package — the constraint here
+does not exclude them, and the CI matrix proves the API still works by relaxing
+`policy.advisories.block` for those rows only. But if you are on Laravel 11 or
+below, **upgrading the framework is the actual fix**; this package supporting it
+does not make running it safe.
+
+Laravel 12 and 13 install and test with the advisory policy fully enabled.
+
 ---
 
 ## Security notice for 1.x users

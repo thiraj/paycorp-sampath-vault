@@ -5,6 +5,9 @@
 # does not honour .gitignore; without this the dist would carry every dev
 # dependency.
 /vendor             export-ignore
+/composer.lock      export-ignore
+/.phpunit.cache     export-ignore
+/.phpunit.result.cache export-ignore
 /.github            export-ignore
 /tests              export-ignore
 /examples           export-ignore

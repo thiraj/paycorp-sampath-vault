@@ -1,6 +1,7 @@
 {
     "name": "createch/paycorp-sampath-vault",
-    "description": "Paycorp Sampath bank IPG package for Vault realtime payment",
+    "description": "Sampath Bank (Paycorp) Internet Payment Gateway client for Laravel and plain PHP: hosted redirect payments, real-time payments and card tokenisation (vault).",
+    "keywords": ["laravel", "payment", "payment-gateway", "sampath", "paycorp", "ipg", "vault", "tokenization", "sri-lanka"],
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -9,21 +10,48 @@
             "email": "thirajpriyadharshana@gmail.com"
         }
     ],
-    "require": {},
+    "require": {
+        "php": "^7.3 || ^8.0",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "illuminate/support": "^5.5 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^3.5 || ^4.0 || ^5.0 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0",
+        "phpunit/phpunit": "^9.6 || ^10.5 || ^11.0 || ^12.0 || ^13.0"
+    },
     "autoload": {
         "psr-4": {
             "createch\\PaycorpSampathVault\\": "src"
         }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^7.4@dev",
-        "orchestra/testbench": "^3.8@dev"
     },
     "autoload-dev": {
         "psr-4": {
             "createch\\PaycorpSampathVault\\Test\\": "tests/"
         }
     },
-    "minimum-stability": "dev",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "createch\\PaycorpSampathVault\\PaycorpSampathVaultServiceProvider"
+            ],
+            "aliases": {
+                "PaycorpSampathVault": "createch\\PaycorpSampathVault\\PaycorpSampathVaultFacade"
+            }
+        },
+        "branch-alias": {
+            "dev-2.x": "2.x-dev"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite=Unit",
+        "test:contract": "phpunit --testsuite=Contract",
+        "test:integration": "phpunit --testsuite=Integration",
+        "test:coverage": "phpunit --coverage-text --coverage-filter src"
+    },
+    "config": {
+        "sort-packages": true
+    },
     "prefer-stable": true
 }

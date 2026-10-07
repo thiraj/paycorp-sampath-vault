@@ -1,85 +1,66 @@
 <?php
 namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers;
 
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientPayment\PaymentRealTimeResponse;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
+use createch\PaycorpSampathVault\Support\Arr;
 
+/**
+ * Wire format for PAYMENT_REAL_TIME.
+ *
+ * The empty-string defaults in fromJson() are kept exactly as they were, so
+ * callers inspecting ResponseCode === '' still see what they always saw. What
+ * changed is upstream: BaseFacade no longer reaches this method at all when
+ * the exchange failed or the body was not a gateway envelope, so these
+ * defaults can no longer disguise a network outage as a completed payment.
+ */
 class PaymentRealTimeJsonHelper implements IJsonHelper {
-
-    public function __construct() {
-        
-    }
 
     public function fromJson($responseData) {
         $paymentRealTimeResponse = new PaymentRealTimeResponse();
-        $paymentRealTimeResponse->setTxnReference(isset($responseData['responseData']['txnReference'])?$responseData['responseData']['txnReference']:"");
-        $paymentRealTimeResponse->setResponseCode(isset($responseData['responseData']['responseCode'])?$responseData['responseData']['responseCode']:"");
-        $paymentRealTimeResponse->setResponseText(isset($responseData['responseData']['responseText'])?$responseData['responseData']['responseText']:"");
-        $paymentRealTimeResponse->setSettlementDate(isset($responseData['responseData']['settlementDate'])?$responseData['responseData']['settlementDate']:"");
-        $paymentRealTimeResponse->setAuthCode(isset($responseData['responseData']['authCode'])?$responseData['responseData']['authCode']:"");
+        $paymentRealTimeResponse->setTxnReference(Arr::getString($responseData, 'responseData.txnReference', ""));
+        $paymentRealTimeResponse->setResponseCode(Arr::getString($responseData, 'responseData.responseCode', ""));
+        $paymentRealTimeResponse->setResponseText(Arr::getString($responseData, 'responseData.responseText', ""));
+        $paymentRealTimeResponse->setSettlementDate(Arr::getString($responseData, 'responseData.settlementDate', ""));
+        $paymentRealTimeResponse->setAuthCode(Arr::getString($responseData, 'responseData.authCode', ""));
 
         return $paymentRealTimeResponse;
     }
 
     public function toJson($paycorpRequest) {
-        $version = $paycorpRequest->getVersion();
-        $msgId = $paycorpRequest->getMsgId();
-        $operation = $paycorpRequest->getOperation();
-        $requestDate = $paycorpRequest->getRequestDate();
-        $validateOnly = $paycorpRequest->getValidateOnly();
         $requestData = $paycorpRequest->getRequestData();
-
-        $clientId = $requestData->getClientId();
-        $originalTxnReference = $requestData->getOriginalTxnReference();
-        $transactiontype = $requestData->getTransactionType();
-
         $creditCard = $requestData->getCreditCard();
-        $type = $creditCard->getType();
-        $holderName = $creditCard->getHolderName();
-        $number = $creditCard->getNumber();
-        $expiry = $creditCard->getExpiry();
-        $secureId = $creditCard->getSecureId();
-        $secureIdSupplied = $creditCard->getSecureIdSupplied();
-
         $transactionAmount = $requestData->getTransactionAmount();
-        $totalAmount = $transactionAmount->getTotalAmount();
-        $paymentAmount = $transactionAmount->getPaymentAmount();
-        $serviceFeeAmount = $transactionAmount->getServiceFeeAmount();
-        $currency = $transactionAmount->getCurrency();
-
-        $clientRef = $requestData->getClientRef();
-        $comment = $requestData->getComment();
-        $extraData = $requestData->getExtraData();
 
         return array(
-            "version" => "$version",
-            "msgId" => "$msgId",
-            "operation" => "$operation",
-            "requestDate" => "$requestDate",
-            "validateOnly" => $validateOnly,
+            "version" => (string) $paycorpRequest->getVersion(),
+            "msgId" => (string) $paycorpRequest->getMsgId(),
+            "operation" => (string) $paycorpRequest->getOperation(),
+            "requestDate" => (string) $paycorpRequest->getRequestDate(),
+            "validateOnly" => $paycorpRequest->getValidateOnly(),
             "requestData" => array(
-                "clientId" => $clientId,
-                "originalTxnReference" => "$originalTxnReference",
+                "clientId" => $requestData->getClientId(),
+                "originalTxnReference" => (string) $requestData->getOriginalTxnReference(),
                 "creditCard" => array(
-                    "type" => "$type",
-                    "holderName" => "$holderName",
-                    "number" => "$number",
-                    "expiry" => "$expiry",
-                    "secureId" => "$secureId",
-                    "secureIdSupplied" => $secureIdSupplied
+                    "type" => (string) $creditCard->getType(),
+                    "holderName" => (string) $creditCard->getHolderName(),
+                    "number" => (string) $creditCard->getNumber(),
+                    "expiry" => (string) $creditCard->getExpiry(),
+                    "secureId" => (string) $creditCard->getSecureId(),
+                    "secureIdSupplied" => $creditCard->getSecureIdSupplied(),
                 ),
-                "transactionType" => "$transactiontype",
+                "transactionType" => (string) $requestData->getTransactionType(),
                 "transactionAmount" => array(
-                    "totalAmount" => $totalAmount,
-                    "paymentAmount" => $paymentAmount,
-                    "serviceFeeAmount" => $serviceFeeAmount,
-                    "currency" => "$currency"
+                    "totalAmount" => $transactionAmount->getTotalAmount(),
+                    "paymentAmount" => $transactionAmount->getPaymentAmount(),
+                    "serviceFeeAmount" => $transactionAmount->getServiceFeeAmount(),
+                    "currency" => (string) $transactionAmount->getCurrency(),
                 ),
-                "clientRef" => "$clientRef",
-                "comment" => "$comment",
-                "extraData" => $extraData
-                )
-            );
+                "clientRef" => (string) $requestData->getClientRef(),
+                "comment" => (string) $requestData->getComment(),
+                "extraData" => $requestData->getExtraData(),
+            ),
+        );
     }
 
 }

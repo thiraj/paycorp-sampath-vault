@@ -3,43 +3,41 @@ namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers;
 
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\RetrieveCardResponse;
+use createch\PaycorpSampathVault\Support\Arr;
 
+/**
+ * Wire format for VAULT_RETRIEVE_CARD.
+ *
+ * Only responseCode and responseText are mapped, matching the original
+ * behaviour exactly. Any card detail the gateway returns is deliberately left
+ * unmapped rather than guessed at: inventing key names here would either
+ * silently drop data or, worse, surface a PAN the caller did not expect to
+ * hold. Supply the Paycorp field list and it can be mapped properly.
+ */
 class RetrieveCardJsonHelper implements IJsonHelper {
-    
-    public function __construct() {
-        
-    }
 
     public function fromJson($responseData) {
         $retrieveCardResponse = new RetrieveCardResponse();
-        $retrieveCardResponse->setResponseCode($responseData['responseData']['responseCode']);
-        $retrieveCardResponse->setResponseText($responseData['responseData']['responseText']);
+        $retrieveCardResponse->setResponseCode(Arr::get($responseData, 'responseData.responseCode'));
+        $retrieveCardResponse->setResponseText(Arr::get($responseData, 'responseData.responseText'));
 
         return $retrieveCardResponse;
     }
 
     public function toJson($paycorpRequest) {
-        $version = $paycorpRequest->getVersion();
-        $msgId = $paycorpRequest->getMsgId();
-        $operation = $paycorpRequest->getOperation();
-        $requestDate = $paycorpRequest->getRequestDate();
-        $validateOnly = $paycorpRequest->getValidateOnly();
         $requestData = $paycorpRequest->getRequestData();
-        
-        $clientId = $requestData->getClientId();
-        $token = $requestData->getToken();
 
         return array(
-            "version" => "$version",
-            "msgId" => "$msgId",
-            "operation" => "$operation",
-            "requestDate" => "$requestDate",
-            "validateOnly" => $validateOnly,
+            "version" => (string) $paycorpRequest->getVersion(),
+            "msgId" => (string) $paycorpRequest->getMsgId(),
+            "operation" => (string) $paycorpRequest->getOperation(),
+            "requestDate" => (string) $paycorpRequest->getRequestDate(),
+            "validateOnly" => $paycorpRequest->getValidateOnly(),
             "requestData" => array(
-                "clientId" => $clientId,
-                "token" => "$token"
-                )
-            );
+                "clientId" => $requestData->getClientId(),
+                "token" => (string) $requestData->getToken(),
+            ),
+        );
     }
 
 }

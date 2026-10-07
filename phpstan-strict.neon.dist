@@ -1,0 +1,19 @@
+# Level 9 (maximum) over the code written for 2.x.
+#
+# The vendored Paycorp SDK under src/Paycorplib is analysed separately at
+# level 5 by phpstan.neon.dist: its hundreds of untyped getters and setters
+# are public API, and adding native parameter types to them would reject input
+# that 1.x accepted. That typing work is a 3.x change.
+#
+# Everything new is held to the maximum level so the gap does not widen.
+parameters:
+    level: 9
+    paths:
+        - src/Contracts
+        - src/Configuration
+        - src/Exceptions
+        - src/Http
+        - src/Security
+        - src/Support
+        - src/Testing
+    treatPhpDocTypesAsCertain: false

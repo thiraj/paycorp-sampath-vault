@@ -3,59 +3,48 @@ namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers;
 
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\StoreCardResponse;
+use createch\PaycorpSampathVault\Support\Arr;
 
+/**
+ * Wire format for VAULT_STORE_CARD.
+ *
+ * The outbound field order and string coercion are byte-identical to the
+ * original, because the HMAC is computed over this exact JSON: reordering a
+ * single key would change the signature and the gateway would reject it.
+ */
 class StoreCardJsonHelper implements IJsonHelper {
-
-    public function __construct() {
-        
-    }
 
     public function fromJson($responseData) {
         $storeCardResponse = new StoreCardResponse();
-        $storeCardResponse->setToken($responseData['responseData']['token']);
-        $storeCardResponse->setResponseCode($responseData['responseData']['responseCode']);
-        $storeCardResponse->setResponseText($responseData['responseData']['responseText']);
+        $storeCardResponse->setToken(Arr::get($responseData, 'responseData.token'));
+        $storeCardResponse->setResponseCode(Arr::get($responseData, 'responseData.responseCode'));
+        $storeCardResponse->setResponseText(Arr::get($responseData, 'responseData.responseText'));
 
         return $storeCardResponse;
     }
 
     public function toJson($paycorpRequest) {
-        $version = $paycorpRequest->getVersion();
-        $msgId = $paycorpRequest->getMsgId();
-        $operation = $paycorpRequest->getOperation();
-        $requestDate = $paycorpRequest->getRequestDate();
-        $validateOnly = $paycorpRequest->getValidateOnly();
         $requestData = $paycorpRequest->getRequestData();
-
-        $clientId = $requestData->getClientId();
-        $clientRef = $requestData->getClientRef();
-
         $creditCard = $requestData->getCreditCard();
-        $type = $creditCard->getType();
-        $holderName = $creditCard->getHolderName();
-        $number = $creditCard->getNumber();
-        $expiry = $creditCard->getExpiry();
-        $secureId = $creditCard->getSecureId();
-        $secureIdSupplied = $creditCard->getSecureIdSupplied();
 
         return array(
-            "version" => "$version",
-            "msgId" => "$msgId",
-            "operation" => "$operation",
-            "requestDate" => "$requestDate",
-            "validateOnly" => $validateOnly,
+            "version" => (string) $paycorpRequest->getVersion(),
+            "msgId" => (string) $paycorpRequest->getMsgId(),
+            "operation" => (string) $paycorpRequest->getOperation(),
+            "requestDate" => (string) $paycorpRequest->getRequestDate(),
+            "validateOnly" => $paycorpRequest->getValidateOnly(),
             "requestData" => array(
-                "clientId" => $clientId,
-                "clientRef" => "$clientRef",
+                "clientId" => $requestData->getClientId(),
+                "clientRef" => (string) $requestData->getClientRef(),
                 "creditCard" => array(
-                    "type" => "$type",
-                    "holderName" => "$holderName",
-                    "number" => "$number",
-                    "expiry" => "$expiry",
-                    "secureId" => "$secureId",
-                    "secureIdSupplied" => $secureIdSupplied
-                )
-            )
+                    "type" => (string) $creditCard->getType(),
+                    "holderName" => (string) $creditCard->getHolderName(),
+                    "number" => (string) $creditCard->getNumber(),
+                    "expiry" => (string) $creditCard->getExpiry(),
+                    "secureId" => (string) $creditCard->getSecureId(),
+                    "secureIdSupplied" => $creditCard->getSecureIdSupplied(),
+                ),
+            ),
         );
     }
 

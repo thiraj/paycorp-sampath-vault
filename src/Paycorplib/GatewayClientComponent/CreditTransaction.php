@@ -3,7 +3,6 @@ namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientComponent;
 
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientComponent\CreditCard;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientComponent\TransactionAmount;
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientEnums\TransactionType;
 
 class CreditTransaction {
 
@@ -44,7 +43,7 @@ class CreditTransaction {
         return $this->transactionType;
     }
 
-    public function  setTransactionType(TransactionType $transactionType) {
+    public function  setTransactionType($transactionType) {
         $this->transactionType = $transactionType;
     }
 
@@ -65,7 +64,7 @@ class CreditTransaction {
     }
 
     public function  getComment() {
-        return comment;
+        return $this->comment;
     }
 
     public function  setComment($comment) {

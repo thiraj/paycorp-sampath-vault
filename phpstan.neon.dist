@@ -1,0 +1,8 @@
+# Starts at level 5 because the vendored Paycorp SDK is untyped getter/setter
+# code. The ratchet target is level 8, raised one level at a time so each step
+# is a reviewable change rather than a thousand-line rewrite.
+parameters:
+    level: 5
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false

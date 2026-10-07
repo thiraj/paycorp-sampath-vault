@@ -1,88 +1,63 @@
 <?php
 namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers;
 
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientPayment\PaymentInitResponse;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
+use createch\PaycorpSampathVault\Support\Arr;
 
+/**
+ * Wire format for PAYMENT_INIT.
+ *
+ * The outbound key order and string coercion match the original byte for
+ * byte, because the HMAC is computed over this JSON.
+ */
 class PaymentInitJsonHelper implements IJsonHelper {
-
-    public function __construct() {
-        
-    }
 
     public function fromJson($responseData) {
         $paymentInitResponse = new PaymentInitResponse();
-        $paymentInitResponse->setReqid($responseData['responseData']['reqid']);
-        $paymentInitResponse->setExpireAt($responseData['responseData']['expireAt']);
-        $paymentInitResponse->setPaymentPageUrl($responseData['responseData']['paymentPageUrl']);
+        $paymentInitResponse->setReqid(Arr::get($responseData, 'responseData.reqid'));
+        $paymentInitResponse->setExpireAt(Arr::get($responseData, 'responseData.expireAt'));
+        $paymentInitResponse->setPaymentPageUrl(Arr::get($responseData, 'responseData.paymentPageUrl'));
 
         return $paymentInitResponse;
     }
 
     public function toJson($paycorpRequest) {
-        $version = $paycorpRequest->getVersion();
-        $msgId = $paycorpRequest->getMsgId();
-        $operation = $paycorpRequest->getOperation();
-        $requestDate = $paycorpRequest->getRequestDate();
-        $validateOnly = $paycorpRequest->getValidateOnly();
         $requestData = $paycorpRequest->getRequestData();
-        
-        $clientId = $requestData->getClientId();
-        $clientIdHash = $requestData->getClientIdHash();
-        $transactionType = $requestData->getTransactionType();
-        $clientRef = $requestData->getClientRef();
-        $comment = $requestData->getComment();
-        $tokenize = $requestData->getTokenize();
-        $tokenReference = $requestData->getTokenReference();
-        $cssLocation1 = $requestData->getCssLocation1();
-        $cssLocation2 = $requestData->getCssLocation2();
-        $useReliability = $requestData->isUseReliability();
-        $extraData = $requestData->getExtraData();
-        
         $transactionAmount = $requestData->getTransactionAmount();
-        $totalAmount = $transactionAmount->getTotalAmount();
-        $paymentAmount = $transactionAmount->getPaymentAmount();
-        $serviceFeeAmount = $transactionAmount->getServiceFeeAmount();
-        $currency = $transactionAmount->getCurrency();
-        
         $redirect = $requestData->getRedirect();
-        $returnUrl = $redirect->getReturnUrl();
-        $cancelUrl = $redirect->getCancelUrl();
-        $returnMethod = $redirect->getReturnMethod();
 
         return array(
-            "version" => "$version",
-            "msgId" => "$msgId",
-            "operation" => "$operation",
-            "requestDate" => "$requestDate",
-            "validateOnly" => $validateOnly,
+            "version" => (string) $paycorpRequest->getVersion(),
+            "msgId" => (string) $paycorpRequest->getMsgId(),
+            "operation" => (string) $paycorpRequest->getOperation(),
+            "requestDate" => (string) $paycorpRequest->getRequestDate(),
+            "validateOnly" => $paycorpRequest->getValidateOnly(),
             "requestData" => array(
-                "clientId" => $clientId,
-                "clientIdHash" => "$clientIdHash",
-                "transactionType" => "$transactionType",
+                "clientId" => $requestData->getClientId(),
+                "clientIdHash" => (string) $requestData->getClientIdHash(),
+                "transactionType" => (string) $requestData->getTransactionType(),
                 "transactionAmount" => array(
-                    "totalAmount" => $totalAmount,
-                    "paymentAmount" => $paymentAmount,
-                    "serviceFeeAmount" => $serviceFeeAmount,
-                    "currency" => "$currency"
+                    "totalAmount" => $transactionAmount->getTotalAmount(),
+                    "paymentAmount" => $transactionAmount->getPaymentAmount(),
+                    "serviceFeeAmount" => $transactionAmount->getServiceFeeAmount(),
+                    "currency" => (string) $transactionAmount->getCurrency(),
                 ),
                 "redirect" => array(
-                    "returnUrl" => "$returnUrl",
-                    "cancelUrl" => "$cancelUrl",
-                    "returnMethod" => "$returnMethod"
+                    "returnUrl" => (string) $redirect->getReturnUrl(),
+                    "cancelUrl" => (string) $redirect->getCancelUrl(),
+                    "returnMethod" => (string) $redirect->getReturnMethod(),
                 ),
-                "clientRef" => "$clientRef",
-                "comment" => "$comment",
-                "tokenize" => $tokenize,
-                "tokenReference" => "$tokenReference",
-                "cssLocation1" => "$cssLocation1",
-                "cssLocation2" => "$cssLocation2",
-                "useReliability" => $useReliability,
-                "extraData" => $extraData
-                )
-            );
-        
-
+                "clientRef" => (string) $requestData->getClientRef(),
+                "comment" => (string) $requestData->getComment(),
+                "tokenize" => $requestData->getTokenize(),
+                "tokenReference" => (string) $requestData->getTokenReference(),
+                "cssLocation1" => (string) $requestData->getCssLocation1(),
+                "cssLocation2" => (string) $requestData->getCssLocation2(),
+                "useReliability" => $requestData->isUseReliability(),
+                "extraData" => $requestData->getExtraData(),
+            ),
+        );
     }
 
 }

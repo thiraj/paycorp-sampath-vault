@@ -1,0 +1,121 @@
+name: tests
+
+on:
+  push:
+    branches: [master, 2.x]
+  pull_request:
+  schedule:
+    # A monthly run catches a new Laravel or PHP release breaking the matrix
+    # before a merchant discovers it in production.
+    - cron: '0 3 1 * *'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} / ${{ matrix.dependency-version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Testbench major to Laravel major:
+        #   6 -> L8, 7 -> L9, 8 -> L10, 9 -> L11, 10 -> L12, 11 -> L13
+        include:
+          # Lower bound of the declared support range.
+          - { php: '7.4', laravel: '8.*',  testbench: '6.*',  dependency-version: prefer-lowest }
+          - { php: '7.4', laravel: '8.*',  testbench: '6.*',  dependency-version: prefer-stable }
+          - { php: '8.0', laravel: '9.*',  testbench: '7.*',  dependency-version: prefer-stable }
+          - { php: '8.1', laravel: '10.*', testbench: '8.*',  dependency-version: prefer-lowest }
+          - { php: '8.1', laravel: '10.*', testbench: '8.*',  dependency-version: prefer-stable }
+          - { php: '8.2', laravel: '11.*', testbench: '9.*',  dependency-version: prefer-stable }
+          - { php: '8.3', laravel: '11.*', testbench: '9.*',  dependency-version: prefer-stable }
+          - { php: '8.2', laravel: '12.*', testbench: '10.*', dependency-version: prefer-stable }
+          - { php: '8.3', laravel: '12.*', testbench: '10.*', dependency-version: prefer-stable }
+          - { php: '8.3', laravel: '13.*', testbench: '11.*', dependency-version: prefer-stable }
+          - { php: '8.4', laravel: '13.*', testbench: '11.*', dependency-version: prefer-stable }
+          - { php: '8.4', laravel: '13.*', testbench: '11.*', dependency-version: prefer-lowest }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json, mbstring
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Resolve dependencies for this Laravel version
+        run: |
+          composer require --no-update --no-interaction \
+            "laravel/framework:${{ matrix.laravel }}" \
+            "orchestra/testbench:${{ matrix.testbench }}"
+          composer update --${{ matrix.dependency-version }} --no-interaction --no-progress
+
+      - name: Report the resolved versions
+        run: composer show laravel/framework orchestra/testbench phpunit/phpunit | grep -E '^(name|versions)'
+
+      - name: Run the test suite
+        run: vendor/bin/phpunit
+
+  coverage:
+    runs-on: ubuntu-latest
+    name: coverage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, json, mbstring
+          coverage: pcov
+          tools: composer:v2
+      - run: composer update --no-interaction --no-progress
+      - name: Enforce a coverage floor on the security-critical code
+        run: |
+          vendor/bin/phpunit --coverage-text --coverage-filter src --coverage-clover=coverage.xml
+          php -r '
+            $xml = simplexml_load_file("coverage.xml");
+            $m = $xml->project->metrics;
+            $pct = $m["statements"] > 0 ? 100 * $m["coveredstatements"] / $m["statements"] : 0;
+            printf("line coverage: %.2f%%\n", $pct);
+            if ($pct < 80.0) { fwrite(STDERR, "coverage below the 80% floor\n"); exit(1); }
+          '
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    name: lint and static analysis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, json, mbstring
+          coverage: none
+          tools: composer:v2, phpstan
+      - run: composer update --no-interaction --no-progress
+      - name: Lint every file on the lowest supported PHP syntax
+        run: find src config -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: PHPStan, whole package at level 5
+        run: phpstan analyse -c phpstan.neon.dist --no-progress --no-interaction
+
+      - name: PHPStan, code written for 2.x at level 9
+        run: phpstan analyse -c phpstan-strict.neon.dist --no-progress --no-interaction
+
+  syntax-floor:
+    runs-on: ubuntu-latest
+    name: PHP ${{ matrix.php }} syntax floor
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.3', '7.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: Every shipped file must parse on the declared minimum PHP
+        run: find src config -name '*.php' -print0 | xargs -0 -n1 php -l

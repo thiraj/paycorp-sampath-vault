@@ -1,0 +1,34 @@
+{
+  "_comment": "Recorded PAYMENT_COMPLETE response. PAN masked, token and identifiers replaced with non-production values.",
+  "msgId": "AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE",
+  "responseData": {
+    "clientId": "99990001",
+    "clientIdHash": "d41d8cd98f00b204e9800998ecf8427e",
+    "transactionType": "PURCHASE",
+    "creditCard": {
+      "type": "VISA",
+      "holderName": "A N OTHER",
+      "number": "456445******4564",
+      "expiry": "12/28"
+    },
+    "transactionAmount": {
+      "totalAmount": 1500,
+      "paymentAmount": 1450,
+      "serviceFeeAmount": 50,
+      "withholdingAmount": 0,
+      "currency": "LKR"
+    },
+    "clientRef": "ORDER-1",
+    "comment": "Order 1",
+    "txnReference": "TXN-9",
+    "feeReference": "FEE-9",
+    "responseCode": "00",
+    "responseText": "APPROVED",
+    "settlementDate": "20261007",
+    "token": "TOK-7",
+    "tokenized": true,
+    "tokenResponseText": "TOKEN CREATED",
+    "authCode": "123456",
+    "cvcResponse": "M"
+  }
+}

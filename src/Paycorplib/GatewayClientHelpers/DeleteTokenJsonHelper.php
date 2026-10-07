@@ -3,43 +3,41 @@ namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers;
 
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\DeleteTokenResponse;
+use createch\PaycorpSampathVault\Support\Arr;
 
+/**
+ * Wire format for VAULT_DELETE_TOKEN.
+ *
+ * fromJson() previously read $responseData[responseData][responseCode] with
+ * the array keys unquoted. PHP 7 resolved the bare words to strings with a
+ * notice, so it happened to work; PHP 8 made undefined constants a fatal
+ * Error, so deleteToken() has been broken on PHP 8 since that release.
+ * The keys are now quoted and read defensively.
+ */
 class DeleteTokenJsonHelper implements IJsonHelper {
-    
-    public function __construct() {
-        
-    }
 
     public function fromJson($responseData) {
         $deleteTokenResponse = new DeleteTokenResponse();
-        $deleteTokenResponse->setResponseCode($responseData[responseData][responseCode]);
-        $deleteTokenResponse->setResponseText($responseData[responseData][responseText]);
+        $deleteTokenResponse->setResponseCode(Arr::get($responseData, 'responseData.responseCode'));
+        $deleteTokenResponse->setResponseText(Arr::get($responseData, 'responseData.responseText'));
 
         return $deleteTokenResponse;
     }
 
     public function toJson($paycorpRequest) {
-        $version = $paycorpRequest->getVersion();
-        $msgId = $paycorpRequest->getMsgId();
-        $operation = $paycorpRequest->getOperation();
-        $requestDate = $paycorpRequest->getRequestDate();
-        $validateOnly = $paycorpRequest->getValidateOnly();
         $requestData = $paycorpRequest->getRequestData();
-        
-        $clientId = $requestData->getClientId();
-        $token = $requestData->getToken();
 
         return array(
-            "version" => "$version",
-            "msgId" => "$msgId",
-            "operation" => "$operation",
-            "requestDate" => "$requestDate",
-            "validateOnly" => $validateOnly,
+            "version" => (string) $paycorpRequest->getVersion(),
+            "msgId" => (string) $paycorpRequest->getMsgId(),
+            "operation" => (string) $paycorpRequest->getOperation(),
+            "requestDate" => (string) $paycorpRequest->getRequestDate(),
+            "validateOnly" => $paycorpRequest->getValidateOnly(),
             "requestData" => array(
-                "clientId" => $clientId,
-                "token" => "$token"
-                )
-            );
+                "clientId" => $requestData->getClientId(),
+                "token" => (string) $requestData->getToken(),
+            ),
+        );
     }
 
 }

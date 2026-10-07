@@ -2,8 +2,15 @@
 namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientRoot;
 
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientEnums\Version;
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\CommonUtils;
+use createch\PaycorpSampathVault\Support\RandomMessageIdGenerator;
 
+/**
+ * The envelope wrapped around every operation's requestData.
+ *
+ * The constructor still assigns a msgId so a hand-built request works on its
+ * own, but BaseFacade overwrites it from the injected generator. That is what
+ * lets a test assert on an exact outbound body.
+ */
 class PaycorpRequest {
 
     private $version;
@@ -12,13 +19,14 @@ class PaycorpRequest {
     private $requestDate;
     private $validateOnly;
     private $requestData;
-    
+
     public function __construct() {
         $this->version = Version::$VERSION_LATEST;
-        $this->msgId = CommonUtils::generateGUID();
+        $generator = new RandomMessageIdGenerator();
+        $this->msgId = $generator->generate();
         $this->validateOnly = FALSE;
     }
-    
+
     public function getVersion() {
         return $this->version;
     }
@@ -26,7 +34,7 @@ class PaycorpRequest {
     public function setVersion($version) {
         $this->version = $version;
     }
-    
+
     public function getMsgId() {
         return $this->msgId;
     }

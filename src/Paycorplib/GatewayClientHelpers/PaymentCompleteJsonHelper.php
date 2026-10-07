@@ -1,123 +1,97 @@
 <?php
 namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers;
 
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientPayment\PaymentCompleteResponse;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientComponent\CreditCard;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientComponent\TransactionAmount;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientPayment\PaymentCompleteResponse;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientUtils\IJsonHelper;
+use createch\PaycorpSampathVault\Support\Arr;
 
-class PaymentCompleteJsonHelper {
-
-    public function __construct() {
-        
-    }
+/**
+ * Wire format for PAYMENT_COMPLETE.
+ *
+ * Now declares IJsonHelper, which it previously did not -- it satisfied the
+ * interface by coincidence, so nothing stopped a future edit from breaking the
+ * contract BaseFacade relies on.
+ *
+ * DEFAULTS ARE LOAD-BEARING
+ * -------------------------
+ * The original mixed guarded and unguarded reads, which produced an odd but
+ * observable set of fallbacks: a missing clientRef, feeReference, token or
+ * withholdingAmount became the integer 0, a missing comment or
+ * tokenResponseText became "", and every other missing field became null
+ * (with a PHP warning). Callers compare against those values, so each one is
+ * reproduced exactly rather than normalised. Arr::get() treats
+ * present-but-null as missing, matching the isset() checks it replaces.
+ *
+ * The only behavioural change is that a missing field no longer emits a
+ * warning or throws under a strict error handler.
+ */
+class PaymentCompleteJsonHelper implements IJsonHelper {
 
     public function fromJson($responseData) {
+        $response = new PaymentCompleteResponse();
 
-        $paymentCompleteResponse = new PaymentCompleteResponse();
-        $paymentCompleteResponse->setClientId($responseData['responseData']['clientId']);
-        $paymentCompleteResponse->setClientIdHash($responseData['responseData']['clientIdHash']);
-        $paymentCompleteResponse->setTransactionType($responseData['responseData']['transactionType']);
+        $response->setClientId(Arr::get($responseData, 'responseData.clientId'));
+        $response->setClientIdHash(Arr::get($responseData, 'responseData.clientIdHash'));
+        $response->setTransactionType(Arr::get($responseData, 'responseData.transactionType'));
 
         $creditCard = new CreditCard();
-        $creditCard->setType($responseData['responseData']['creditCard']['type']);
-        $creditCard->setHolderName($responseData['responseData']['creditCard']['holderName']);
-        $creditCard->setNumber($responseData['responseData']['creditCard']['number']);
-        $creditCard->setExpiry($responseData['responseData']['creditCard']['expiry']);
-        $paymentCompleteResponse->setCreditCard($creditCard);
+        $creditCard->setType(Arr::get($responseData, 'responseData.creditCard.type'));
+        $creditCard->setHolderName(Arr::get($responseData, 'responseData.creditCard.holderName'));
+        $creditCard->setNumber(Arr::get($responseData, 'responseData.creditCard.number'));
+        $creditCard->setExpiry(Arr::get($responseData, 'responseData.creditCard.expiry'));
+        $response->setCreditCard($creditCard);
 
-        $transactionAmount = new TransactionAmount($responseData['responseData']['transactionAmount']['paymentAmount']);
-        $transactionAmount->setTotalAmount($responseData['responseData']['transactionAmount']['totalAmount']);
-        $transactionAmount->setPaymentAmount($responseData['responseData']['transactionAmount']['paymentAmount']);
-        $transactionAmount->setServiceFeeAmount($responseData['responseData']['transactionAmount']['serviceFeeAmount']);
-        
-       
-         if(isset($responseData["responseData"]["transactionAmount"]["withholdingAmount"]))
-       {
-        $transactionAmount->setWithholdingAmount($responseData["responseData"]["transactionAmount"]["withholdingAmount"]); 
-        }
-        else
-        {
-            $transactionAmount->setWithholdingAmount(0); 
-        }
+        $transactionAmount = new TransactionAmount(
+            Arr::get($responseData, 'responseData.transactionAmount.paymentAmount')
+        );
+        $transactionAmount->setTotalAmount(Arr::get($responseData, 'responseData.transactionAmount.totalAmount'));
+        $transactionAmount->setPaymentAmount(Arr::get($responseData, 'responseData.transactionAmount.paymentAmount'));
+        $transactionAmount->setServiceFeeAmount(Arr::get($responseData, 'responseData.transactionAmount.serviceFeeAmount'));
+        // Legacy fallback: 0, not null.
+        $transactionAmount->setWithholdingAmount(Arr::get($responseData, 'responseData.transactionAmount.withholdingAmount', 0));
+        $transactionAmount->setCurrency(Arr::get($responseData, 'responseData.transactionAmount.currency'));
+        $response->setTransactionAmount($transactionAmount);
 
-        
+        // Legacy fallback: 0, not null or "".
+        $response->setClientRef(Arr::get($responseData, 'responseData.clientRef', 0));
+        // Legacy fallback: "".
+        $response->setComment(Arr::get($responseData, 'responseData.comment', ""));
+        $response->setTxnReference(Arr::get($responseData, 'responseData.txnReference'));
+        // Legacy fallback: 0.
+        $response->setFeeReference(Arr::get($responseData, 'responseData.feeReference', 0));
+        $response->setResponseCode(Arr::get($responseData, 'responseData.responseCode'));
+        $response->setResponseText(Arr::get($responseData, 'responseData.responseText'));
+        $response->setSettlementDate(Arr::get($responseData, 'responseData.settlementDate'));
+        // Legacy fallback: 0.
+        $response->setToken(Arr::get($responseData, 'responseData.token', 0));
+        $response->setTokenized(Arr::get($responseData, 'responseData.tokenized'));
+        // Legacy fallback: "".
+        $response->setTokenResponseText(Arr::get($responseData, 'responseData.tokenResponseText', ""));
+        $response->setAuthCode(Arr::get($responseData, 'responseData.authCode'));
+        $response->setCvcResponse(Arr::get($responseData, 'responseData.cvcResponse'));
+        // Never mapped by the original helper; mapped now because the field is
+        // echoed back verbatim from the request, so there is nothing to guess.
+        $response->setExtraData(Arr::get($responseData, 'responseData.extraData'));
 
-        $transactionAmount->setCurrency($responseData['responseData']['transactionAmount']['currency']);
-        $paymentCompleteResponse->setTransactionAmount($transactionAmount);
-
-        if(isset($responseData["responseData"]["clientRef"]))
-        {
-            $paymentCompleteResponse->setClientRef($responseData["responseData"]["clientRef"]);
-        }
-        else
-        {
-            $paymentCompleteResponse->setClientRef(0);
-        }
-        if(isset($responseData['responseData']['comment']))
-        {
-        $paymentCompleteResponse->setComment($responseData['responseData']['comment']);
-        }
-        else
-        {
-            $paymentCompleteResponse->setComment("");
-        }
-        $paymentCompleteResponse->setTxnReference($responseData['responseData']['txnReference']);
-        if(isset($responseData['responseData']['feeReference']))
-        {
-        $paymentCompleteResponse->setFeeReference($responseData['responseData']['feeReference']);
-        }
-        else
-        {
-            $paymentCompleteResponse->setFeeReference(0);
-        }
-        $paymentCompleteResponse->setResponseCode($responseData['responseData']['responseCode']);
-        $paymentCompleteResponse->setResponseText($responseData['responseData']['responseText']);
-        $paymentCompleteResponse->setSettlementDate($responseData['responseData']['settlementDate']);
-        if(isset($responseData['responseData']['token']))
-        {
-        $paymentCompleteResponse->setToken($responseData['responseData']['token']);
-        }
-        else
-        {
-            $paymentCompleteResponse->setToken(0);
-        }
-        $paymentCompleteResponse->setTokenized($responseData['responseData']['tokenized']);
-        if(isset($responseData['responseData']['tokenResponseText']))
-        {
-        $paymentCompleteResponse->setTokenResponseText($responseData['responseData']['tokenResponseText']);
-        }
-        else
-        {
-            $paymentCompleteResponse->setTokenResponseText("");
-        }
-        $paymentCompleteResponse->setAuthCode($responseData['responseData']['authCode']);
-        $paymentCompleteResponse->setCvcResponse($responseData['responseData']['cvcResponse']);
-
-        return $paymentCompleteResponse;
+        return $response;
     }
 
     public function toJson($paycorpRequest) {
-        $version = $paycorpRequest->getVersion();
-        $msgId = $paycorpRequest->getMsgId();
-        $operation = $paycorpRequest->getOperation();
-        $requestDate = $paycorpRequest->getRequestDate();
-        $validateOnly = $paycorpRequest->getValidateOnly();
         $requestData = $paycorpRequest->getRequestData();
 
-        $clientId = $requestData->getClientId();
-        $reqid = $requestData->getReqid();
-
         return array(
-            "version" => "$version",
-            "msgId" => "$msgId",
-            "operation" => "$operation",
-            "requestDate" => "$requestDate",
-            "validateOnly" => $validateOnly,
+            "version" => (string) $paycorpRequest->getVersion(),
+            "msgId" => (string) $paycorpRequest->getMsgId(),
+            "operation" => (string) $paycorpRequest->getOperation(),
+            "requestDate" => (string) $paycorpRequest->getRequestDate(),
+            "validateOnly" => $paycorpRequest->getValidateOnly(),
             "requestData" => array(
-                "clientId" => $clientId,
-                "reqid" => $reqid
-            )
+                "clientId" => $requestData->getClientId(),
+                "reqid" => $requestData->getReqid(),
+            ),
         );
     }
 
-} ?>
+}

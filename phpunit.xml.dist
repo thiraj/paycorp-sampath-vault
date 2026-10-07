@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Deliberately minimal, so this one file is valid across PHPUnit 9.6 to 13.
+
+  Omitted on purpose:
+    convertErrorsToExceptions, convertNoticesToExceptions,
+    convertWarningsToExceptions  : removed in PHPUnit 10.
+    backupStaticAttributes       : renamed backupStaticProperties in PHPUnit 10.
+    filter/whitelist, coverage/include : replaced by "source" in PHPUnit 10.
+
+  Pass coverage scope on the command line instead:
+    vendor/bin/phpunit (coverage-text) (coverage-filter src)
+-->
+<phpunit bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnWarning="true"
+         failOnRisky="true"
+         stopOnFailure="false">
+    <testsuites>
+        <!-- Pure units: no network, no framework, no container. -->
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <!-- The full request and response pipeline against a fake transport. -->
+        <testsuite name="Contract">
+            <directory>tests/Contract</directory>
+        </testsuite>
+        <!-- Boots a real Laravel application via Orchestra Testbench. -->
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

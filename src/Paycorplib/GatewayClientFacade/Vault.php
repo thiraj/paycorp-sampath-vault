@@ -1,42 +1,66 @@
 <?php
 namespace createch\PaycorpSampathVault\Paycorplib\GatewayClientFacade;
 
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers\StoreCardJsonHelper;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientConfig\ClientConfig;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientEnums\Operation;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers\DeleteTokenJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers\RetrieveCardJsonHelper;
+use createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers\StoreCardJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers\UpdateCardJsonHelper;
 use createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers\VerifyTokenJsonHelper;
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientHelpers\DeleteTokenJsonHelper;
-use createch\PaycorpSampathVault\Paycorplib\GatewayClientEnums\Operation;
+use createch\PaycorpSampathVault\Support\ClientRuntime;
 
+/**
+ * Card vault operations: store, retrieve, update, verify and delete a token.
+ */
 final class Vault extends BaseFacade {
 
-    public function __construct($config) {
-        parent::__construct($config);
+    /**
+     * @param  ClientConfig        $config
+     * @param  ClientRuntime|null  $runtime
+     */
+    public function __construct($config, ?ClientRuntime $runtime = null) {
+        parent::__construct($config, $runtime);
     }
 
+    /**
+     * @param  \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\StoreCardRequest  $request
+     * @return \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\StoreCardResponse
+     */
     public function storeCard($request) {
-        $storeCardJsonHelper = new StoreCardJsonHelper();
-        return parent::process($request, Operation::$VAULT_STORE_CARD, $storeCardJsonHelper);
+        return $this->process($request, Operation::$VAULT_STORE_CARD, new StoreCardJsonHelper());
     }
 
+    /**
+     * @param  \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\RetrieveCardRequest  $request
+     * @return \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\RetrieveCardResponse
+     */
     public function retrieveCard($request) {
-        $retrieveCardJsonHelper = new RetrieveCardJsonHelper();
-        return parent::process($request, Operation::$VAULT_RETRIEVE_CARD, $retrieveCardJsonHelper);
+        return $this->process($request, Operation::$VAULT_RETRIEVE_CARD, new RetrieveCardJsonHelper());
     }
 
+    /**
+     * @param  \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\UpdateCardRequest  $request
+     * @return \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\UpdateCardResponse
+     */
     public function updateCard($request) {
-        $updateCardJsonHelper = new UpdateCardJsonHelper();
-        return parent::process($request, Operation::$VAULT_UPDATE_CARD, $updateCardJsonHelper);
+        return $this->process($request, Operation::$VAULT_UPDATE_CARD, new UpdateCardJsonHelper());
     }
 
+    /**
+     * @param  \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\VerifyTokenRequest  $request
+     * @return \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\VerifyTokenResponse
+     */
     public function verifyToken($request) {
-        $verifyTokenJsonHelper = new VerifyTokenJsonHelper();
-        return parent::process($request, Operation::$VAULT_VERIFY_TOKEN, $verifyTokenJsonHelper);
+        return $this->process($request, Operation::$VAULT_VERIFY_TOKEN, new VerifyTokenJsonHelper());
     }
 
+    /**
+     * @param  \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\DeleteTokenRequest  $request
+     * @return \createch\PaycorpSampathVault\Paycorplib\GatewayClientVault\DeleteTokenResponse
+     */
     public function deleteToken($request) {
-        $deleteTokenJsonHelper = new DeleteTokenJsonHelper();
-        return parent::process($request, Operation::$VAULT_DELETE_TOKEN, $deleteTokenJsonHelper);
+        return $this->process($request, Operation::$VAULT_DELETE_TOKEN, new DeleteTokenJsonHelper());
     }
 
 }

@@ -1,6 +1,10 @@
 * text=auto eol=lf
 
 # Keep the distributed package minimal: nothing below is needed at runtime.
+# /vendor is listed because `composer archive` builds from the working tree and
+# does not honour .gitignore; without this the dist would carry every dev
+# dependency.
+/vendor             export-ignore
 /.github            export-ignore
 /tests              export-ignore
 /examples           export-ignore

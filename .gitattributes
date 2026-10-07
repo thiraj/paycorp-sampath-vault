@@ -11,6 +11,7 @@
 /phpstan.neon.dist  export-ignore
 /phpstan-strict.neon.dist export-ignore
 /CONTRIBUTING.md    export-ignore
+/RELEASING.md       export-ignore
 /UPGRADE.md         export-ignore
 /CHANGELOG.md       export-ignore
 /SECURITY.md        export-ignore

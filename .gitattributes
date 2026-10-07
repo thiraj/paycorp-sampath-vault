@@ -20,5 +20,8 @@
 /CONTRIBUTING.md    export-ignore
 /RELEASING.md       export-ignore
 /UPGRADE.md         export-ignore
-/CHANGELOG.md       export-ignore
-/SECURITY.md        export-ignore
+/.git               export-ignore
+
+# CHANGELOG.md and SECURITY.md are deliberately NOT export-ignored: they carry
+# the 1.x credential and TLS disclosures, and an operator auditing an installed
+# copy must be able to find that record in vendor/ without visiting GitHub.

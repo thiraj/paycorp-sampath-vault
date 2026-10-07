@@ -38,7 +38,7 @@ jobs:
           - { php: '8.4', laravel: '13.*', testbench: '11.*', dependency-version: prefer-lowest }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -56,7 +56,11 @@ jobs:
           composer update --${{ matrix.dependency-version }} --no-interaction --no-progress
 
       - name: Report the resolved versions
-        run: composer show laravel/framework orchestra/testbench phpunit/phpunit | grep -E '^(name|versions)'
+        # composer show accepts at most one package name, so query them one at a time.
+        run: |
+          for pkg in laravel/framework orchestra/testbench phpunit/phpunit; do
+            printf '%-26s %s\n' "$pkg" "$(composer show "$pkg" 2>/dev/null | awk '/^versions/ {print $3}')"
+          done
 
       - name: Run the test suite
         run: vendor/bin/phpunit
@@ -65,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     name: coverage
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -88,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     name: lint and static analysis
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -112,7 +116,7 @@ jobs:
       matrix:
         php: ['7.3', '7.4']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}

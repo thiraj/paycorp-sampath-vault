@@ -2,6 +2,8 @@
 
 namespace createch\PaycorpSampathVault\Configuration;
 
+use createch\PaycorpSampathVault\PaycorpSampathVault;
+
 /**
  * Immutable HTTP transport settings.
  *
@@ -69,7 +71,8 @@ final class TransportOptions
         $this->userAgent = $this->string(
             $options,
             'user_agent',
-            'createch-paycorp-sampath-vault/2.0 (+https://github.com/thiraj/paycorp-sampath-vault)'
+            'createch-paycorp-sampath-vault/' . PaycorpSampathVault::VERSION
+                . ' (+https://github.com/thiraj/paycorp-sampath-vault)'
         );
     }
 

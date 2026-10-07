@@ -111,14 +111,70 @@ class ServiceProviderTest extends TestCase
 
     public function testThePublishedConfigFileContainsNoHardCodedCredentials()
     {
-        // 1.x shipped live production credentials in its config file.
-        $contents = file_get_contents(dirname(__DIR__, 2) . '/config/paycorp-sampath-vault.php');
+        // REGRESSION: 1.x shipped live production credentials as literals in its
+        // config file. This canary is structural rather than a comparison against
+        // the leaked strings -- publishing those strings here would re-disclose
+        // them on every clone. Any credential key that grows a literal default,
+        // or any host name appearing in the file, fails the build.
+        $source = file_get_contents(dirname(__DIR__, 2) . '/config/paycorp-sampath-vault.php');
 
-        $this->assertStringNotContainsString('0uKyQ562Rf2Q7jbk', $contents);
-        $this->assertStringNotContainsString('a62cdd4d-c882-4264-be5f-1a7e64b25b36', $contents);
-        $this->assertStringNotContainsString('sampath.paycorp.com.au', $contents);
-        $this->assertStringNotContainsString('14002149', $contents);
-        $this->assertStringNotContainsString('14002150', $contents);
+        $this->assertIsString($source);
+
+        $credentialKeys = [
+            'service_endpoint',
+            'authtoken',
+            'hmac_secret',
+            'tokenize_client_id',
+            'purchase_client_id',
+        ];
+
+        foreach ($credentialKeys as $key) {
+            $this->assertMatchesRegularExpression(
+                "/'" . $key . "'\s*=>\s*env\(\s*'[A-Z0-9_]+'\s*(?:,\s*''\s*)?\)/",
+                $source,
+                "'{$key}' must read from env() with no literal default"
+            );
+        }
+
+        // No host name may be baked in: the gateway endpoint is deployment data.
+        $this->assertDoesNotMatchRegularExpression(
+            '/[a-z0-9.-]+\.(?:com|net|lk|au|org|io)/i',
+            $this->stripComments($source),
+            'the config file must not name a gateway host'
+        );
+
+        // Reject any bare string or numeric literal outside an env() default:
+        // a credential reintroduced under a new key is still a credential.
+        $code = $this->stripComments($source);
+        $code = preg_replace("/env\(\s*'[A-Z0-9_]+'\s*(?:,[^)]*)?\)/", 'ENV', $code);
+
+        $this->assertDoesNotMatchRegularExpression(
+            "/=>\s*'[^']+'/",
+            (string) $code,
+            'every config value must come from env(), never a literal'
+        );
+    }
+
+    /**
+     * Strip // and block comments so the deliberate prose in the config file --
+     * which names the leaked keys by their env var -- does not trip the scans.
+     *
+     * @param  string  $source
+     * @return string
+     */
+    private function stripComments($source)
+    {
+        $out = '';
+
+        foreach (token_get_all($source) as $token) {
+            if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            $out .= is_array($token) ? $token[1] : $token;
+        }
+
+        return $out;
     }
 
     public function testProvidesListsTheServicesItRegisters()

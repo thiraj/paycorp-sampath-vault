@@ -22,7 +22,7 @@ Every 1.x release committed live gateway credentials to the repository, and thos
 tags are published on Packagist:
 
 - `src/config/PaycorpSampathVault.php` held an `authtoken`, an `hmac_secret`, and
-  the merchant client ids `14002149` / `14002150`, against the production endpoint.
+  two merchant client ids, against the production endpoint.
 - `src/Paycorplib/GatewayIT/pcw_payment-complete_UT.php` held an `authtoken` and
   `hmac_secret` pointing at the **production** endpoint.
 - Four further `GatewayIT/*` scripts held test-environment credentials.

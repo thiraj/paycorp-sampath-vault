@@ -55,7 +55,7 @@ this package at 1.x, treat the following as compromised and ask Sampath/Paycorp 
 rotate them:
 
 - the `authtoken` and `hmac_secret` that shipped in `src/config/PaycorpSampathVault.php`
-- the merchant client ids `14002149` and `14002150`
+- the two merchant client ids that shipped alongside them
 - the credentials in the `src/Paycorplib/GatewayIT/*` sample scripts, one of which
   pointed at the **production** endpoint
 

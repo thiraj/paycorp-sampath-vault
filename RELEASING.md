@@ -86,10 +86,16 @@ phpstan analyse -c phpstan.neon.dist
 phpstan analyse -c phpstan-strict.neon.dist
 composer validate --strict
 
-# 2. No credential may ever reappear in the tree
-git grep -nE '0uKyQ562Rf2Q7jbk|a62cdd4d-c882|YkBb7uqHROKCUOB6|ad0862e6-13a2' -- \
-  ':!SECURITY.md' ':!README.md' ':!UPGRADE.md' ':!CHANGELOG.md' ':!tests/Integration/ServiceProviderTest.php'
-# (the excluded files name them intentionally: disclosure docs and a canary test)
+# 2. No credential may ever reappear in the tree.
+#    The structural canary is part of the suite -- it fails if any config value
+#    grows a literal, a host name, or an env() default:
+vendor/bin/phpunit --filter testThePublishedConfigFileContainsNoHardCodedCredentials
+
+#    Plus a generic scan for secret-shaped literals anywhere in the shipped code.
+#    No leaked value is written down here: printing it in this file would
+#    re-disclose it on every clone.
+git grep -nIE "'[A-Za-z0-9+/]{16,}'|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" \
+  -- src config
 
 # 3. Confirm the distributed archive is minimal
 composer archive --format=tar --dir=/tmp

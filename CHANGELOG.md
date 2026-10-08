@@ -92,6 +92,16 @@ Every 1.x public method, signature and response key is preserved. See
   key is caught too. The scanner's own patterns are tested in both directions.
 - CI matrix over PHP 7.4–8.4 × Laravel 6–13, with `--prefer-lowest` and
   `--prefer-stable` runs; PHPStan level 5 package-wide and level 9 on new code.
+- A wire-parity harness (`tests/Differential/wire-parity.sh`) proving 2.x sends
+  byte-identical requests to v1.4 across twelve scenarios: the nine signed
+  operations plus non-ASCII, empty-optional and zero-fee edge inputs. v1.4 and the
+  current tree run as separate processes, each posting through real curl to a
+  local capture server; the comparison covers the request body (with a
+  field-level and key-order diff), the `HMAC` header, the `AUTHTOKEN` header,
+  `Content-Type` and the HTTP method. Only `msgId` and `requestDate` are
+  replayed from the v1.4 run, being the two fields 1.x generated
+  nondeterministically. It runs in CI on PHP 7.4 and 8.4, and stands in for the
+  gateway sandbox this package has no access to.
 - A `legacy-bootstrap` CI job covering Laravel 5.5 and 5.8, which
   `orchestra/testbench` cannot reach (testbench 3.5 pins `phpunit ^6.5` while
   the suite needs `phpunit` 9.1 assertions). It installs `illuminate/support`

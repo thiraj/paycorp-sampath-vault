@@ -160,6 +160,64 @@ jobs:
       - name: Boot the provider and verify signature parity
         run: php tests/Legacy/bootstrap-check.php
 
+  wire-parity:
+    runs-on: ubuntu-latest
+    name: wire parity with v1.4 (PHP ${{ matrix.php }})
+
+    # The release gate that stands in for a gateway sandbox.
+    #
+    # 2.x rewrote the signing and transport path, and there is no Paycorp
+    # sandbox available to confirm the bank still accepts what it produces. So
+    # instead this proves the next best thing, and arguably the stricter thing:
+    # that 2.x puts BYTE-IDENTICAL requests on the wire as v1.4, which is known
+    # to have been accepted in production for years.
+    #
+    # Both versions post through real curl to a local capture server, so what
+    # is compared is the actual byte stream -- body, HMAC header, AUTHTOKEN
+    # header, Content-Type, method -- for all nine signed operations. Only
+    # msgId and requestDate are replayed from the v1.4 run, because those are
+    # the two fields 1.x generates nondeterministically; everything else must
+    # match on its own merit.
+    #
+    # PHP 7.4 is included because that is where 1.x was actually functional:
+    # several of its helpers index responses with unquoted array keys, which is
+    # a warning on PHP 7 and a fatal Error on PHP 8.
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.4']
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The harness extracts the v1.4 source with `git archive`, so the
+          # tag has to be present -- a shallow default clone does not have it.
+          fetch-depth: 0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json, mbstring
+          coverage: none
+          tools: composer:v2
+
+      - name: Install production dependencies only
+        # The dev block is REMOVED, not merely skipped. `--no-dev` still
+        # resolves require-dev, and on the 7.4 row that fails outright
+        # ("orchestra/testbench[v8.0.0, ...] require php ^8.1 -> your php
+        # version (7.4.33) does not satisfy that requirement"). Same trap as
+        # the legacy-bootstrap job.
+        #
+        # The harness needs none of it: it touches only this package's own
+        # classes and its autoloader, never testbench or phpunit.
+        run: |
+          composer remove --dev --no-update --no-interaction \
+            orchestra/testbench phpunit/phpunit
+          composer update --no-dev --no-interaction --no-progress
+
+      - name: v1.4 and the working tree must send identical bytes
+        run: ./tests/Differential/wire-parity.sh
+
   coverage:
     runs-on: ubuntu-latest
     name: coverage

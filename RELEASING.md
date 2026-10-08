@@ -148,12 +148,15 @@ tar -tf /tmp/paycorp-sampath-vault-*.tar | grep -E 'tests/|\.github/|examples/' 
 # 4. The legacy half of the support range, without testbench
 php tests/Legacy/bootstrap-check.php
 
-# 5. Set the version constant and the changelog date
+# 5. Byte parity with v1.4 -- this stands in for a gateway sandbox, see below
+./tests/Differential/wire-parity.sh
+
+# 6. Set the version constant and the changelog date
 #    src/PaycorpSampathVault.php  -> const VERSION
 #    CHANGELOG.md                 -> replace "unreleased" with the date
 #    (the User-Agent derives from the constant; do not hardcode it)
 
-# 6. Tag and push
+# 7. Tag and push
 git tag -a v2.0.0 -m 'v2.0.0 — Laravel 5.5-13, security fixes, test suite'
 git push origin 2.x
 git push origin v2.0.0
@@ -162,29 +165,92 @@ git push origin v2.0.0
 Packagist picks the tag up via its GitHub hook. Verify afterwards that the new
 version is listed and that its `require` block shows the full Laravel range.
 
-## Ship a prerelease before a major
+## Proving a major release without a gateway sandbox
 
 2.x rewrote the signing and transport path: `CurlTransport`, `Sha256HmacSigner`
 and `Latin1Encoder` are the code that produces the bytes the bank verifies. The
-golden vectors prove byte-equality with 1.x offline, which is strong — but it is
-not the same as a live gateway accepting a live signature.
-
-So before the first stable tag of any major, publish a prerelease and put it
-through a real merchant account against the Paycorp **sandbox**:
+usual way to gain confidence in that is a sandbox merchant account. **There is
+no Paycorp sandbox available for this package**, so the release relies instead
+on differential proof against 1.x, which is known to have been accepted in
+production for years.
 
 ```bash
-git tag -a v2.0.0-beta.1 -m 'v2.0.0-beta.1 — gateway verification pending'
+./tests/Differential/wire-parity.sh
+```
+
+That harness runs v1.4 and the working tree as two separate processes — they
+share a namespace and cannot be autoloaded together — each posting through real
+curl to a local capture server. It then compares, for all twelve scenarios
+(the nine signed operations plus three edge inputs), the actual byte stream:
+
+- the request body, byte for byte, with a field-level diff and an explicit
+  key-order check (the HMAC covers the serialised body, so order is signature)
+- the `HMAC` header, which re-proves the whole signing chain
+- the `AUTHTOKEN` header, `Content-Type`, and the HTTP method
+
+Only `msgId` and `requestDate` are replayed from the v1.4 run, because those are
+the two fields 1.x generates nondeterministically (`mt_rand()` and
+`date('Y-m-d H:i:s')`). Replaying them is also what makes the signatures
+comparable at all: the digest covers both, so without replay every HMAC would
+differ for an uninteresting reason. Nothing else is replayed.
+
+`User-Agent` is deliberately excluded: 1.x impersonated
+`Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)` and 2.x identifies itself
+honestly. The gateway neither signs nor gates on it.
+
+Three of the twelve scenarios are deliberately awkward, because a happy path
+per operation would leave the interesting cases unproven:
+
+- **non-ASCII in a signed field.** 1.x ran the payload through `utf8_decode()`;
+  2.x reimplements that bit-exactly in `Latin1Encoder`, since `utf8_decode()` is
+  removed in PHP 9. The golden vectors pin the encoder in isolation — this pins
+  it through the whole stack in a real signed request. The body carries
+  `\u00f4`, `\u2014`, `\u2615` and `\u65e5\u672c\u8a9e`, and both sides produce
+  the same 594 bytes and the same digest.
+- **empty optional strings**, which 1.x wrote as `$data['x'] ? $data['x'] : ''`.
+- **a zero service fee**, with total equal to payment amount.
+
+The harness runs in CI on PHP 7.4 and 8.4. 7.4 matters because that is where 1.x
+was actually functional — several of its helpers index responses with unquoted
+array keys, a warning on PHP 7 and a fatal `Error` on PHP 8. On 7.4 the legacy
+run completes with no response-handling failures at all; on 8.4 three operations
+report one, and the harness notes it and carries on, because the request has
+already been signed and captured by then.
+
+`KEEP_CAPTURES=1` leaves both capture sets on disk for inspection.
+`LEGACY_SRC_DIR=<dir>` skips the `git archive` step when the repo is not
+reachable — a container that mounts only the working tree, or a git worktree,
+whose `.git` is a file pointing outside the mount.
+
+### What this does and does not establish
+
+It establishes that a merchant upgrading from 1.4 to 2.0 sends the gateway
+exactly what they sent before. For a package whose entire job is to sign a
+payload the bank verifies, that is the property that matters, and it is checked
+more precisely than a sandbox transaction would check it — a sandbox proves one
+path once, this proves all nine every time CI runs.
+
+It does not establish that the gateway accepts any *new* capability 2.x adds
+beyond the 1.x surface. Keep that in mind before widening the API: anything that
+changes or extends the signed bytes is outside what parity covers, and
+`Payment::batch()` is the live example — 1.x referenced an undeclared
+`Operation::$PAYMENT_BATCH` and could never have worked, so 2.x throws
+`UnsupportedOperationException` rather than guessing a wire format. Guessing is
+what parity exists to prevent.
+
+### Still ship a prerelease
+
+```bash
+git tag -a v2.0.0-beta.1 -m 'v2.0.0-beta.1'
 git push origin v2.0.0-beta.1
 ```
 
 Composer treats `-beta.N` as unstable, so no consumer requiring `^2.0` picks it
-up by accident; a tester opts in with `"^2.0@beta"`. Exercise every flow that
-signs a request — hosted redirect, real-time payment, and store / retrieve /
-verify / delete token — then tag the stable release. `examples/smoke-test.php`
-is the starting point.
-
-Do not skip this because the suite is green. The suite cannot tell you that the
-bank agrees with it.
+up by accident; a tester opts in with `"^2.0@beta"`. Install it in one real
+application and drive the flows that application actually uses against
+production, starting with the smallest-value transaction that is meaningful.
+Parity means the request bytes are right; a prerelease is what confirms the
+*response* handling, config wiring and error paths behave in a real deployment.
 
 ## Do not retag
 

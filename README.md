@@ -38,6 +38,22 @@ bytes are identical. A digest that differs is a payment the gateway rejects.
 
 Every shipped file is additionally linted on PHP 7.3 and 7.4, the declared floor.
 
+### Upgrading from 1.x: the wire bytes are unchanged
+
+2.x rewrote the signing and transport internals, so the obvious question is
+whether the gateway still sees the same request. It does, and that is checked
+rather than asserted: `tests/Differential/wire-parity.sh` runs v1.4 and the
+current tree side by side, each posting through real curl to a local capture
+server, and compares the actual byte stream for twelve scenarios — the nine
+signed operations plus non-ASCII, empty-optional and zero-fee edge inputs. The
+comparison covers the request body with a field-level and key-order diff, plus
+the `HMAC`, `AUTHTOKEN` and `Content-Type` headers. Only `msgId` and
+`requestDate` are replayed, since those are the two fields 1.x generated
+nondeterministically.
+
+It runs in CI on PHP 7.4 and 8.4. If an upgrade ever changed what the bank
+receives, that job fails before the release does.
+
 ### A caveat about Laravel 11 and earlier
 
 Laravel 5.5 through 11 are **end of life**, and every release in those lines

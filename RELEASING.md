@@ -54,10 +54,53 @@ rows for those versions carry `eol-framework: true` and relax the policy for
 themselves only; the `coverage` job keeps it enabled. Never relax it for a
 release build.
 
+### Laravel 5.5 – 5.8: the `legacy-bootstrap` job
+
+Those versions cannot be reached through testbench: testbench 3.5 pins
+`phpunit ^6.5`, while the suite needs assertions added in `phpunit` 9.1. That is
+an incompatibility between two dev tools, not a limitation of the package — so
+rather than carry `^5.5` in the constraint as an unverified claim, the
+`legacy-bootstrap` job installs `laravel/framework` at 5.5 and 5.8 with the dev
+block **removed** and runs `tests/Legacy/bootstrap-check.php`, which:
+
+- registers the service provider against a real `Illuminate\Container\Container`
+  and asserts `mergeConfigFrom()` landed the shipped defaults;
+- resolves every container binding and the facade;
+- re-signs all 90 frozen golden HMAC vectors and compares each digest.
+
+The vector comparison is the assertion that matters. A signature that differs on
+an old framework is a payment the gateway rejects, and no amount of green unit
+tests elsewhere would catch it.
+
+Two details in that job are load-bearing, and both cost an afternoon to
+rediscover:
+
+- **`composer remove --dev`, not `composer update --no-dev`.** `--no-dev` still
+  *resolves* `require-dev`, and `orchestra/testbench` pulls `laravel/framework`,
+  which `replaces` `illuminate/*`. Leaving the dev block in place fails with
+  `laravel/framework replaces illuminate/view and thus cannot coexist with it`
+  and nothing resolves at all.
+- **`laravel/framework`, not the `illuminate/*` split packages.** The shipped
+  config file calls `env()`, which lives in `illuminate/support`'s helpers but
+  depends on `vlucas/phpdotenv` and `phpoption/phpoption` — brought in only by
+  `laravel/framework`. Installing `illuminate/support` alone dies at
+  `mergeConfigFrom()` with `Class 'PhpOption\Option' not found`. That is a
+  harness artifact, not a package defect; a real application always has the
+  framework.
+
+Laravel 5.5 also needs `allow-plugins.kylekatarnls/update-helper false`, because
+`nesbot/carbon` 1.x ships a composer plugin that modern composer blocks.
+
+If you ever drop `^5.5` from the constraint, delete those two matrix rows in the
+same commit — and remember that dropping a version is a **major** release.
+
 ### Testbench to Laravel mapping
 
 | Laravel | Testbench | PHP floor |
 |---|---|---|
+| 5.5 – 5.8 | none — see below | 7.3 |
+| 6 | `^4.0` | 7.3 |
+| 7 | `^5.0` | 7.3 |
 | 8 | `^6.0` | 7.3 |
 | 9 | `^7.0` | 8.0 |
 | 10 | `^8.0` | 8.1 |
@@ -102,11 +145,15 @@ composer archive --format=tar --dir=/tmp
 tar -tf /tmp/paycorp-sampath-vault-*.tar | grep -E 'tests/|\.github/|examples/' \
   && echo 'export-ignore is not working' || echo 'archive is clean'
 
-# 4. Set the version constant and the changelog date
+# 4. The legacy half of the support range, without testbench
+php tests/Legacy/bootstrap-check.php
+
+# 5. Set the version constant and the changelog date
 #    src/PaycorpSampathVault.php  -> const VERSION
 #    CHANGELOG.md                 -> replace "unreleased" with the date
+#    (the User-Agent derives from the constant; do not hardcode it)
 
-# 5. Tag and push
+# 6. Tag and push
 git tag -a v2.0.0 -m 'v2.0.0 — Laravel 5.5-13, security fixes, test suite'
 git push origin 2.x
 git push origin v2.0.0
@@ -114,6 +161,30 @@ git push origin v2.0.0
 
 Packagist picks the tag up via its GitHub hook. Verify afterwards that the new
 version is listed and that its `require` block shows the full Laravel range.
+
+## Ship a prerelease before a major
+
+2.x rewrote the signing and transport path: `CurlTransport`, `Sha256HmacSigner`
+and `Latin1Encoder` are the code that produces the bytes the bank verifies. The
+golden vectors prove byte-equality with 1.x offline, which is strong — but it is
+not the same as a live gateway accepting a live signature.
+
+So before the first stable tag of any major, publish a prerelease and put it
+through a real merchant account against the Paycorp **sandbox**:
+
+```bash
+git tag -a v2.0.0-beta.1 -m 'v2.0.0-beta.1 — gateway verification pending'
+git push origin v2.0.0-beta.1
+```
+
+Composer treats `-beta.N` as unstable, so no consumer requiring `^2.0` picks it
+up by accident; a tester opts in with `"^2.0@beta"`. Exercise every flow that
+signs a request — hosted redirect, real-time payment, and store / retrieve /
+verify / delete token — then tag the stable release. `examples/smoke-test.php`
+is the starting point.
+
+Do not skip this because the suite is green. The suite cannot tell you that the
+bank agrees with it.
 
 ## Do not retag
 

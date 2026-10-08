@@ -21,9 +21,17 @@ jobs:
       fail-fast: false
       matrix:
         # Testbench major to Laravel major:
-        #   6 -> L8, 7 -> L9, 8 -> L10, 9 -> L11, 10 -> L12, 11 -> L13
+        #   4 -> L6, 5 -> L7, 6 -> L8, 7 -> L9, 8 -> L10, 9 -> L11, 10 -> L12, 11 -> L13
+        #
+        # Laravel 5.5-5.8 is absent here on purpose: testbench 3.5 pins
+        # phpunit ^6.5 and this suite needs assertions added in phpunit 9.1.
+        # That lower range is covered by the `legacy-bootstrap` job below, which
+        # boots the provider against a real Illuminate container without
+        # testbench and checks the signature bytes against the golden vectors.
         include:
-          # Lower bound of the declared support range.
+          # Lower bound of the testbench-reachable range.
+          - { php: '7.4', laravel: '6.*', eol-framework: true,  testbench: '4.*',  dependency-version: prefer-stable }
+          - { php: '7.4', laravel: '7.*', eol-framework: true,  testbench: '5.*',  dependency-version: prefer-stable }
           - { php: '7.4', laravel: '8.*', eol-framework: true,  testbench: '^6.6',  dependency-version: prefer-lowest }
           - { php: '7.4', laravel: '8.*', eol-framework: true,  testbench: '6.*',  dependency-version: prefer-stable }
           - { php: '8.0', laravel: '9.*', eol-framework: true,  testbench: '7.*',  dependency-version: prefer-stable }
@@ -80,6 +88,77 @@ jobs:
 
       - name: Run the test suite
         run: vendor/bin/phpunit
+
+  legacy-bootstrap:
+    runs-on: ubuntu-latest
+    name: Laravel ${{ matrix.laravel }} bootstrap (no testbench)
+
+    # Proves the lower half of the declared illuminate/support range really
+    # works. testbench cannot reach it -- testbench 3.5 pins phpunit ^6.5 while
+    # this suite needs phpunit 9.1 assertions -- so instead of leaving Laravel
+    # 5.5-7 as an untested claim in composer.json, this job boots the service
+    # provider against a real Illuminate container, resolves every binding,
+    # resolves the facade, and re-signs all 90 frozen golden HMAC vectors. A
+    # signature that differs on an old framework is a rejected payment, so the
+    # vectors are the assertion that matters.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '7.3', laravel: '5.5.*' }
+          - { php: '7.4', laravel: '5.8.*' }
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json, mbstring
+          coverage: none
+          tools: composer:v2
+
+      - name: Permit end-of-life framework versions to install
+        run: composer config --no-plugins policy.advisories.block false
+
+      - name: Allow the carbon 1.x composer plugin
+        # nesbot/carbon 1.x (Laravel 5.5) ships kylekatarnls/update-helper, a
+        # composer plugin that modern composer blocks by default. Denying it
+        # explicitly suppresses the hard error without running it.
+        run: composer config --no-plugins allow-plugins.kylekatarnls/update-helper false
+
+      - name: Install Laravel ${{ matrix.laravel }}
+        # Two things here are load-bearing.
+        #
+        # 1. The dev block has to actually GO, not merely be skipped at install
+        #    time. `composer update --no-dev` still RESOLVES require-dev, and
+        #    orchestra/testbench pulls laravel/framework, which `replaces`
+        #    illuminate/*, so leaving it in yields
+        #      "laravel/framework replaces illuminate/view and thus cannot
+        #       coexist with it"
+        #    and nothing resolves. Removing it is what keeps phpunit out, which
+        #    is the entire point of this job.
+        #
+        # 2. laravel/framework, not the illuminate/* split packages. The shipped
+        #    config file calls env(), and env() lives in illuminate/support's
+        #    helpers but depends on vlucas/phpdotenv and phpoption/phpoption --
+        #    which only laravel/framework brings in. Installing illuminate/support
+        #    alone fails at mergeConfigFrom() with
+        #      Class 'PhpOption\Option' not found
+        #    which is an artifact of the harness, not a package defect: a real
+        #    application always has the framework present.
+        run: |
+          composer remove --dev --no-update --no-interaction \
+            orchestra/testbench phpunit/phpunit
+          composer require --no-update --no-interaction \
+            "laravel/framework:${{ matrix.laravel }}"
+          composer update --no-interaction --no-progress --prefer-stable
+
+      - name: Report the resolved version
+        run: composer show laravel/framework | awk '/^versions/ {print $3}'
+
+      - name: Boot the provider and verify signature parity
+        run: php tests/Legacy/bootstrap-check.php
 
   coverage:
     runs-on: ubuntu-latest
@@ -138,4 +217,7 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
       - name: Every shipped file must parse on the declared minimum PHP
-        run: find src config -name '*.php' -print0 | xargs -0 -n1 php -l
+        # tests/Legacy is included: bootstrap-check.php is the one test file
+        # that actually executes on a legacy PHP, so a syntax error there is a
+        # broken job rather than a skipped one.
+        run: find src config tests/Legacy -name '*.php' -print0 | xargs -0 -n1 php -l

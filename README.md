@@ -20,10 +20,23 @@ against whatever Laravel you are on.
 
 This breadth is possible because the package touches only `ServiceProvider`,
 `Facade` and the config repository — APIs that have not changed across that whole
-range. The CI matrix runs the suite on PHP 7.4 / 8.0 / 8.1 / 8.2 / 8.3 / 8.4
-against Laravel 8 through 13, with both `--prefer-lowest` and `--prefer-stable`.
-Laravel 5.5 – 7 remain within the declared Composer constraint and are syntax- and
-static-analysis-checked, but are not exercised by the integration suite.
+range.
+
+Every version in the table is exercised in CI, in one of two ways:
+
+| Laravel | How CI verifies it |
+|---|---|
+| 6 · 7 · 8 · 9 · 10 · 11 · 12 · 13 | The full suite under `orchestra/testbench`, on PHP 7.4 → 8.4, with both `--prefer-lowest` and `--prefer-stable` |
+| 5.5 · 5.8 | A bootstrap check that registers the provider against a real Illuminate container, resolves every binding and the facade, and re-signs all 90 frozen golden HMAC vectors |
+
+Laravel 5.5–5.8 gets the second treatment because `orchestra/testbench` 3.5 pins
+`phpunit ^6.5`, while this suite needs assertions added in `phpunit` 9.1 — an
+incompatibility between two dev tools, not a limitation of the package. The
+bootstrap check runs with `--no-dev`, so neither tool is installed, and it
+asserts the thing that actually matters on an old framework: that the signature
+bytes are identical. A digest that differs is a payment the gateway rejects.
+
+Every shipped file is additionally linted on PHP 7.3 and 7.4, the declared floor.
 
 ### A caveat about Laravel 11 and earlier
 

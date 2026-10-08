@@ -82,11 +82,23 @@ Every 1.x public method, signature and response key is preserved. See
 - Configurable timeouts, CA bundle, proxy, and request timezone.
 - Laravel package auto-discovery, and a `paycorp-sampath-vault-config` publish tag.
 - `version()`, returning the real package version.
-- 365 tests across Unit, Contract and Integration suites, including 90 frozen HMAC
+- 459 tests across Unit, Contract and Integration suites, including 90 frozen HMAC
   golden vectors captured from the real `utf8_decode()`, a `config:cache`
   regression gate, and one test per defect listed above.
-- CI matrix over PHP 7.4–8.4 × Laravel 8–13, with `--prefer-lowest` and
+- A standing guard against a repeat of the 1.x credential leak: every file under
+  `src/` and `config/` is scanned for secret *shapes* — an opaque 16+ character
+  literal carrying both a digit and a letter, a UUID, or a host name — rather
+  than for the known leaked strings, so a credential reintroduced under a new
+  key is caught too. The scanner's own patterns are tested in both directions.
+- CI matrix over PHP 7.4–8.4 × Laravel 6–13, with `--prefer-lowest` and
   `--prefer-stable` runs; PHPStan level 5 package-wide and level 9 on new code.
+- A `legacy-bootstrap` CI job covering Laravel 5.5 and 5.8, which
+  `orchestra/testbench` cannot reach (testbench 3.5 pins `phpunit ^6.5` while
+  the suite needs `phpunit` 9.1 assertions). It installs `illuminate/support`
+  with the dev block removed, boots the provider against a real Illuminate
+  container, resolves every binding and the facade, and re-signs all 90 golden
+  vectors — so the lower half of the declared Composer constraint is a verified
+  claim rather than an assumed one.
 
 ### Changed
 
@@ -94,7 +106,10 @@ Every 1.x public method, signature and response key is preserved. See
   it without declaring it.
 - `minimum-stability: dev` removed — it leaked dev stability into consumers.
 - `composer.lock` and `.idea/` untracked; tests, CI and examples `export-ignore`d
-  from the distributed package.
+  from the distributed package. `CHANGELOG.md` and `SECURITY.md` are shipped on
+  purpose, so this disclosure is readable from an installed copy in `vendor/`.
+- The HTTP `User-Agent` derives from `PaycorpSampathVault::VERSION` instead of a
+  hardcoded string, which would have drifted at the next version bump.
 - PHP requirement is `^7.3 || ^8.0`. 1.x claimed PHP 5.6 but was fatal on PHP 8.
 
 ### Deprecated

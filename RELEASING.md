@@ -134,11 +134,15 @@ composer validate --strict
 #    grows a literal, a host name, or an env() default:
 vendor/bin/phpunit --filter testThePublishedConfigFileContainsNoHardCodedCredentials
 
-#    Plus a generic scan for secret-shaped literals anywhere in the shipped code.
-#    No leaked value is written down here: printing it in this file would
-#    re-disclose it on every clone.
-git grep -nIE "'[A-Za-z0-9+/]{16,}'|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" \
-  -- src config
+#    Plus a belt-and-braces manual scan. No leaked value is written down here:
+#    printing it in this file would re-disclose it on every clone.
+#
+#    An opaque credential carries BOTH a digit and a letter -- that is what
+#    separates one from an identifier like 'allowInsecureEndpoint'. git here is
+#    built without libpcre, so no lookaheads; the digit/letter requirement is
+#    applied as two pipeline stages instead. Both commands must print nothing.
+git grep -hoIE "'[A-Za-z0-9+/=]{16,}'" -- src config | grep -E '[0-9]' | grep -E '[A-Za-z]'
+git grep -nIE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' -- src config
 
 # 3. Confirm the distributed archive is minimal
 composer archive --format=tar --dir=/tmp

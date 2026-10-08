@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
-## [2.0.0] — 2026-10-07
+## [2.0.0] — 2026-10-08
 
 One release line supporting **Laravel 5.5 through 13** on PHP 7.3 through 8.4.
 Every 1.x public method, signature and response key is preserved. See
